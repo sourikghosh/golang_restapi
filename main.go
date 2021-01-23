@@ -3,16 +3,18 @@ package main
 import (
 	"os"
 
+	"restapi/api/routes"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	app := gin.Default()
-	app.GET("/", func(contex *gin.Context) {
-		contex.JSON(200, gin.H{
-			"success": "😏",
-		})
-	})
+	api := app.Group("/api")
+	{
+		api.POST("/login", routes.Login)
+		api.POST("/signup", routes.Signup)
+	}
 	PORT := os.Getenv("PORT")
 	app.Run(":" + PORT)
 }
