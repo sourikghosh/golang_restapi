@@ -13,7 +13,6 @@ func main() {
 			"success": "😏",
 		})
 	})
-	os.Setenv("PORT", "4000")
 	PORT := os.Getenv("PORT")
 	app.Run(":" + PORT)
 }
