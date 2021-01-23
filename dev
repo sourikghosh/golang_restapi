@@ -1,0 +1,3 @@
+#!/bin/bash
+export PORT="4000"
+go run main.go
