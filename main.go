@@ -16,5 +16,8 @@ func main() {
 		api.POST("/signup", routes.Signup)
 	}
 	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = "4000"
+	}
 	app.Run(":" + PORT)
 }
