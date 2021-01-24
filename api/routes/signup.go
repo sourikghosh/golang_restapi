@@ -1,7 +1,8 @@
 package routes
 
 import (
-	"restapi/models"
+	database "restapi/Database"
+	models "restapi/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +19,16 @@ func Signup(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "ConfirmPassword doesnot match the Password"})
 		return
 	}
-
-	c.JSON(201, gin.H{"status": "you are logged in"})
+	conn, err := database.Dbclient(c)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	_, error := conn.Query(c, "INSERT INTO go_userlist(email, password) VALUES ($1,$2)",
+		signupData.Email, signupData.Password)
+	if error != nil {
+		c.JSON(500, gin.H{"err": error.Error()})
+		return
+	}
+	c.JSON(201, gin.H{"success": "😎"})
 }
