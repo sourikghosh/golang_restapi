@@ -1,9 +1,8 @@
 package main
 
 import (
-	"os"
-
 	"restapi/api/routes"
+	"restapi/config"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,9 +14,6 @@ func main() {
 		api.POST("/login", routes.Login)
 		api.POST("/signup", routes.Signup)
 	}
-	PORT := os.Getenv("PORT")
-	if PORT == "" {
-		PORT = "4000"
-	}
-	app.Run(":" + PORT)
+
+	app.Run(":" + config.Config["PORT"])
 }
