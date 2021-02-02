@@ -1,14 +1,14 @@
 package middleware
 
 import (
-	"restapi/database"
+	database "restapi/database"
 	models "restapi/models"
 
 	gin "github.com/gin-gonic/gin"
 )
 
-//SignupAuth checks the incomming request and Validates
-func SignupAuth() gin.HandlerFunc {
+//SignupAuthentication checks the incomming request and Validates
+func SignupAuthentication() gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
 
@@ -32,8 +32,8 @@ func SignupAuth() gin.HandlerFunc {
 	}
 }
 
-//LoginAuth checks the incomming request and Validates
-func LoginAuth() gin.HandlerFunc {
+//LoginAuthentication checks the incomming request and Validates
+func LoginAuthentication() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var loginData models.Login
 		if err := ctx.ShouldBind(&loginData); err != nil {
