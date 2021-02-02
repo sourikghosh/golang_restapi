@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"restapi/config"
 	"restapi/models"
 
 	"github.com/gin-gonic/gin"
@@ -12,9 +11,9 @@ import (
 var conn *pgxpool.Pool
 
 //InitDB initialize the database pool and returns error
-func InitDB() error {
+func InitDB(connString string) error {
 	var err error
-	conn, err = pgxpool.Connect(context.Background(), config.Config["DATABASE_URL"])
+	conn, err = pgxpool.Connect(context.Background(), connString)
 	if err != nil {
 		return err
 	}
