@@ -38,7 +38,7 @@ func main() {
 		api.DELETE("/ref/logout", middleware.TokenAuth(), handler.Logout)
 		protected := api.Group("/protected")
 		{
-			protected.GET("/some-route", middleware.TokenAuth(), handler.RouteHandler)
+			protected.GET("/some-route", middleware.AccessTokenAuth(), handler.RouteHandler)
 		}
 	}
 
