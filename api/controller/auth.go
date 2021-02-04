@@ -132,27 +132,6 @@ func VerifyRefreshToken(ctx *gin.Context) (*jwt.Token, error) {
 	return token, nil
 }
 
-//TokenValidator checks the token if its valid or not and then checks in redis after that returns an error
-// func TokenValidator(ctx *gin.Context) (*RedisTokenDetails, error) {
-// 	token, err := VerifyAccessToken(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if _, ok := token.Claims.(jwt.Claims); !ok || !token.Valid {
-// 		return nil, err
-// 	}
-// 	extractedToken, errExtraction := ExtractTokenMetadata(token)
-// 	if errExtraction != nil {
-// 		return nil, errExtraction
-// 	}
-// 	errFetch := FetchSetTokens(ctx, extractedToken)
-// 	if errFetch != nil {
-// 		return nil, errFetch
-// 	}
-// 	return extractedToken, nil
-
-// }
-
 //ExtractAccessTokenMetadata from token
 func ExtractAccessTokenMetadata(token *jwt.Token) (*RedisTokenDetails, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
