@@ -24,10 +24,15 @@ func Login(ctx *gin.Context) {
 		})
 		return
 	}
-
+	ctx.SetCookie("jid", tokenDetails.RefreshToken,
+		604800,
+		"/api/ref",
+		"localhost",
+		false,
+		true,
+	)
 	ctx.JSON(200, gin.H{
-		"access_token":  tokenDetails.AccessToken,
-		"refresh_token": tokenDetails.RefreshToken,
+		"access_token": tokenDetails.AccessToken,
 	})
 
 }
