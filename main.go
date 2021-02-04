@@ -14,7 +14,7 @@ import (
 func init() {
 	errRedis := database.RedisClient(config.Config["REDIS_URL"])
 	if errRedis != nil {
-		log.Fatalf("⛔ Redis URI is not valid: %v\n", errRedis)
+		log.Fatalf("⛔ Unable to connect to Redis: %v\n", errRedis)
 	} else {
 		log.Println("REDIS CONNECTED 🥇")
 	}
@@ -34,9 +34,11 @@ func main() {
 	{
 		api.POST("/login", middleware.LoginAuthentication(), handler.Login)
 		api.POST("/signup", middleware.SignupAuthentication(), handler.Signup)
+		api.POST("/ref/refreshtoken", handler.Refresh)
+		api.DELETE("/ref/logout", middleware.TokenAuth(), handler.Logout)
 		protected := api.Group("/protected")
 		{
-			protected.GET("/some-route", handler.RouteHandler)
+			protected.GET("/some-route", middleware.TokenAuth(), handler.RouteHandler)
 		}
 	}
 
