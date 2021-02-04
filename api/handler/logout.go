@@ -8,15 +8,18 @@ import (
 
 //Logout is delete route
 func Logout(ctx *gin.Context) {
-
-	au, err := controller.ExtractTokenMetadata(ctx)
-	if err != nil {
-		ctx.AbortWithStatusJSON(401, "unauthorized")
-		return
-	}
-	deleted, delErr := controller.DeleteAuth(ctx, au)
+	tokenInfo := ctx.MustGet("tokenInfo").(*controller.RedisTokenDetails)
+	ctx.SetCookie(
+		"jid", "",
+		-1,
+		"/api/ref",
+		"localhost",
+		false,
+		true,
+	)
+	deleted, delErr := controller.DeleteAuth(ctx, tokenInfo)
 	if delErr != nil || deleted == 0 { //if anything goes wrong
-		ctx.AbortWithStatusJSON(401, "unauthorized")
+		ctx.AbortWithStatusJSON(500, "Internel Server Error")
 		return
 	}
 	ctx.JSON(204, deleted)
