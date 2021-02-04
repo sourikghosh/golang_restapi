@@ -14,11 +14,11 @@ func Logout(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(401, "unauthorized")
 		return
 	}
-	deleted, delErr := controller.DeleteAuth(ctx, au.AccessUUID)
+	deleted, delErr := controller.DeleteAuth(ctx, au)
 	if delErr != nil || deleted == 0 { //if anything goes wrong
 		ctx.AbortWithStatusJSON(401, "unauthorized")
 		return
 	}
-	ctx.JSON(200, deleted)
+	ctx.JSON(204, deleted)
 
 }
