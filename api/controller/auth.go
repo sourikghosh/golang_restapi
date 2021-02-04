@@ -13,10 +13,11 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-//AccessDetails struct
-type AccessDetails struct {
-	AccessUUID string
-	UserID     string
+//RedisTokenDetails struct
+type RedisTokenDetails struct {
+	AccessUUID  string
+	RefreshUUID string
+	UserID      string
 }
 
 //TokenDetails struct
@@ -125,7 +126,7 @@ func TokenValidator(ctx *gin.Context) error {
 }
 
 //ExtractTokenMetadata from token
-func ExtractTokenMetadata(ctx *gin.Context) (*AccessDetails, error) {
+func ExtractTokenMetadata(ctx *gin.Context) (*RedisTokenDetails, error) {
 	token, err := VerifyToken(ctx)
 	if err != nil {
 		return nil, err
@@ -136,20 +137,26 @@ func ExtractTokenMetadata(ctx *gin.Context) (*AccessDetails, error) {
 		if !ok {
 			return nil, err
 		}
+		refreshUUID, ok := claims["refresh_uuid"].(string)
+		if !ok {
+			return nil, err
+		}
 		userID, ok := claims["user_id"].(string)
 		if !ok {
 			return nil, err
 		}
-		return &AccessDetails{
-			AccessUUID: accessUUID,
-			UserID:     userID,
+
+		return &RedisTokenDetails{
+			AccessUUID:  accessUUID,
+			RefreshUUID: refreshUUID,
+			UserID:      userID,
 		}, nil
 	}
 	return nil, err
 }
 
 //FetchSetTokens from database
-func FetchSetTokens(ctx *gin.Context, authD *AccessDetails) (string, error) {
+func FetchSetTokens(ctx *gin.Context, authD *RedisTokenDetails) (string, error) {
 	userID, err := database.Get(ctx, authD.AccessUUID)
 	if err != nil {
 		return "", err
@@ -158,8 +165,8 @@ func FetchSetTokens(ctx *gin.Context, authD *AccessDetails) (string, error) {
 }
 
 //DeleteAuth deletes the token uuid provided
-func DeleteAuth(ctx *gin.Context, givenUUID string) (int64, error) {
-	deleted, err := database.Del(ctx, givenUUID)
+func DeleteAuth(ctx *gin.Context, authD *RedisTokenDetails) (int64, error) {
+	deleted, err := database.Del(ctx, authD.AccessUUID, authD.RefreshUUID)
 	if err != nil {
 		return 0, err
 	}
