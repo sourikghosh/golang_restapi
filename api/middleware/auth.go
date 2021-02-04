@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	database "restapi/database"
-	models "restapi/models"
+	"restapi/api/controller"
+	"restapi/database"
+	"restapi/models"
 
-	gin "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
 //SignupAuthentication checks the incomming request and Validates
@@ -22,12 +23,12 @@ func SignupAuthentication() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(402, gin.H{"error": "ConfirmPassword doesnot match the Password"})
 			return
 		}
-		_, exits := database.GetByEmail(ctx, signupData.Email)
+		data, exits := database.GetByEmail(ctx, signupData.Email)
 		if exits {
 			ctx.AbortWithStatusJSON(400, gin.H{"err": "Email already exists"})
 			return
 		}
-		ctx.Set("data", signupData)
+		ctx.Set("data", data)
 		ctx.Next()
 	}
 }
@@ -49,7 +50,19 @@ func LoginAuthentication() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(400, gin.H{"err": "invalid email/password"})
 			return
 		}
-		ctx.Set("data", loginData)
+		ctx.Set("data", data)
+		ctx.Next()
+	}
+}
+
+//TokenAuth checks the token and checks if token is validor not
+func TokenAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		err := controller.TokenValidator(ctx)
+		if err != nil {
+			ctx.AbortWithStatusJSON(401, err.Error())
+			return
+		}
 		ctx.Next()
 	}
 }
