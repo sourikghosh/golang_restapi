@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -85,8 +86,8 @@ func SetToken(ctx *gin.Context, userid string, td *TokenDetails) error {
 	return nil
 }
 
-//ExtractToken extracts the token from the request header "Authorization"
-func ExtractToken(ctx *gin.Context) (string, bool) {
+//ExtractAccessToken extracts the token from the request header "Authorization"
+func ExtractAccessToken(ctx *gin.Context) (string, bool) {
 	bearerToken := ctx.GetHeader("Authorization")
 	strArr := strings.Split(bearerToken, " ")
 	if len(strArr) == 2 {
@@ -95,9 +96,9 @@ func ExtractToken(ctx *gin.Context) (string, bool) {
 	return "", false
 }
 
-//VerifyToken verifies the token from the Header
-func VerifyToken(ctx *gin.Context) (*jwt.Token, error) {
-	tokenString, ok := ExtractToken(ctx)
+//VerifyAccessToken verifies the token from the Header
+func VerifyAccessToken(ctx *gin.Context) (*jwt.Token, error) {
+	tokenString, ok := ExtractAccessToken(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Empty Token found")
 	}
@@ -113,55 +114,103 @@ func VerifyToken(ctx *gin.Context) (*jwt.Token, error) {
 	return token, nil
 }
 
-//TokenValidator checks the token if its valid or not and returns error
-func TokenValidator(ctx *gin.Context) error {
-	token, err := VerifyToken(ctx)
+//VerifyRefreshToken checks refreshToken
+func VerifyRefreshToken(ctx *gin.Context) (*jwt.Token, error) {
+	tokenString, err := ctx.Cookie("jid")
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("Cookie Not Found")
 	}
-	if _, ok := token.Claims.(jwt.Claims); !ok || !token.Valid {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(config.Config["REFRESH_SECRET"]), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+//TokenValidator checks the token if its valid or not and then checks in redis after that returns an error
+// func TokenValidator(ctx *gin.Context) (*RedisTokenDetails, error) {
+// 	token, err := VerifyAccessToken(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if _, ok := token.Claims.(jwt.Claims); !ok || !token.Valid {
+// 		return nil, err
+// 	}
+// 	extractedToken, errExtraction := ExtractTokenMetadata(token)
+// 	if errExtraction != nil {
+// 		return nil, errExtraction
+// 	}
+// 	errFetch := FetchSetTokens(ctx, extractedToken)
+// 	if errFetch != nil {
+// 		return nil, errFetch
+// 	}
+// 	return extractedToken, nil
+
+// }
+
+//ExtractAccessTokenMetadata from token
+func ExtractAccessTokenMetadata(token *jwt.Token) (*RedisTokenDetails, error) {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		accessUUID, ok := claims["access_uuid"].(string)
+		if !ok {
+			return nil, errors.New("No access_uuid claim found")
+		}
+		userID, ok := claims["user_id"].(string)
+		if !ok {
+			return nil, errors.New("No user_id claim found")
+		}
+
+		return &RedisTokenDetails{
+			AccessUUID: accessUUID,
+			UserID:     userID,
+		}, nil
+	}
+	return nil, errors.New("Token extraction error")
+}
+
+//ExtractRefreshTokenMetadata extracts
+func ExtractRefreshTokenMetadata(token *jwt.Token) (*RedisTokenDetails, error) {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		refreshUUID, ok := claims["refresh_uuid"].(string)
+		if !ok {
+			return nil, errors.New("No refresh_uuid claim found")
+		}
+		userID, ok := claims["user_id"].(string)
+		if !ok {
+			return nil, errors.New("No user_id claim found")
+		}
+
+		return &RedisTokenDetails{
+			RefreshUUID: refreshUUID,
+			UserID:      userID,
+		}, nil
+	}
+	return nil, errors.New("Token extraction error")
+}
+
+//FetchAccessTokens from database
+func FetchAccessTokens(ctx *gin.Context, authD *RedisTokenDetails) error {
+	userID, err := database.Get(ctx, authD.AccessUUID)
+	if err != nil || userID != authD.UserID {
 		return err
 	}
 	return nil
 }
 
-//ExtractTokenMetadata from token
-func ExtractTokenMetadata(ctx *gin.Context) (*RedisTokenDetails, error) {
-	token, err := VerifyToken(ctx)
-	if err != nil {
-		return nil, err
+//FetchRefreshTokens fetchs
+func FetchRefreshTokens(ctx *gin.Context, authD *RedisTokenDetails) error {
+	userID, err := database.Get(ctx, authD.RefreshUUID)
+	if err != nil || userID != authD.UserID {
+		return err
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if ok && token.Valid {
-		accessUUID, ok := claims["access_uuid"].(string)
-		if !ok {
-			return nil, err
-		}
-		refreshUUID, ok := claims["refresh_uuid"].(string)
-		if !ok {
-			return nil, err
-		}
-		userID, ok := claims["user_id"].(string)
-		if !ok {
-			return nil, err
-		}
-
-		return &RedisTokenDetails{
-			AccessUUID:  accessUUID,
-			RefreshUUID: refreshUUID,
-			UserID:      userID,
-		}, nil
-	}
-	return nil, err
-}
-
-//FetchSetTokens from database
-func FetchSetTokens(ctx *gin.Context, authD *RedisTokenDetails) (string, error) {
-	userID, err := database.Get(ctx, authD.AccessUUID)
-	if err != nil {
-		return "", err
-	}
-	return userID, nil
+	return nil
 }
 
 //DeleteAuth deletes the token uuid provided
