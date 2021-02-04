@@ -34,7 +34,7 @@ func main() {
 	{
 		api.POST("/login", middleware.LoginAuthentication(), handler.Login)
 		api.POST("/signup", middleware.SignupAuthentication(), handler.Signup)
-		api.POST("/ref/refreshtoken", handler.Refresh)
+		api.GET("/ref/refreshtoken", handler.Refresh)
 		api.DELETE("/ref/logout", middleware.TokenAuth(), handler.Logout)
 		protected := api.Group("/protected")
 		{
