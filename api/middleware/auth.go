@@ -58,11 +58,63 @@ func LoginAuthentication() gin.HandlerFunc {
 //TokenAuth checks the token and checks if token is validor not
 func TokenAuth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		err := controller.TokenValidator(ctx)
+		accessToken, errAccess := controller.VerifyAccessToken(ctx)
+		if errAccess != nil {
+			ctx.AbortWithStatusJSON(401, errAccess.Error())
+			return
+		}
+		refreshToken, errRefresh := controller.VerifyRefreshToken(ctx)
+		if errRefresh != nil {
+			ctx.AbortWithStatusJSON(401, errRefresh.Error())
+			return
+		}
+		accesstokenInfo, errExtraction := controller.ExtractAccessTokenMetadata(accessToken)
+		if errExtraction != nil {
+			ctx.AbortWithStatusJSON(500, errExtraction.Error())
+			return
+		}
+		refreshtokenInfo, errEx := controller.ExtractRefreshTokenMetadata(refreshToken)
+		if errEx != nil {
+			ctx.AbortWithStatusJSON(500, errEx.Error())
+			return
+		}
+		errFromRedisAccess := controller.FetchAccessTokens(ctx, accesstokenInfo)
+		if errFromRedisAccess != nil {
+			ctx.AbortWithStatusJSON(401, errFromRedisAccess.Error())
+			return
+		}
+
+		errFromRedis := controller.FetchRefreshTokens(ctx, refreshtokenInfo)
+		if errFromRedis != nil {
+			ctx.AbortWithStatusJSON(401, errFromRedis.Error())
+			return
+		}
+		tokenInfo := accesstokenInfo
+		tokenInfo.RefreshUUID = refreshtokenInfo.RefreshUUID
+		ctx.Set("tokenInfo", tokenInfo)
+		ctx.Next()
+	}
+}
+
+//AccessTokenAuth checks the AccesToken if its Valid of not
+func AccessTokenAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token, err := controller.VerifyAccessToken(ctx)
 		if err != nil {
 			ctx.AbortWithStatusJSON(401, err.Error())
 			return
 		}
+		tokenInfo, errExtraction := controller.ExtractAccessTokenMetadata(token)
+		if errExtraction != nil {
+			ctx.AbortWithStatusJSON(500, errExtraction.Error())
+			return
+		}
+		errFromRedis := controller.FetchAccessTokens(ctx, tokenInfo)
+		if errFromRedis != nil {
+			ctx.AbortWithStatusJSON(401, errFromRedis.Error())
+			return
+		}
+		ctx.Set("userid", tokenInfo.UserID)
 		ctx.Next()
 	}
 }
