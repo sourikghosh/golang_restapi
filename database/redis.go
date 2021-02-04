@@ -47,8 +47,8 @@ func Get(ctx *gin.Context, key string) (string, error) {
 }
 
 //Del deletes the key provided from redis database
-func Del(ctx *gin.Context, key string) (int64, error) {
-	value, err := redisConn.Del(ctx, key).Result()
+func Del(ctx *gin.Context, keys ...string) (int64, error) {
+	value, err := redisConn.Del(ctx, keys...).Result()
 	if err != nil {
 		return 0, err
 	}
