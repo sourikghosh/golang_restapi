@@ -1,8 +1,43 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+	"restapi/api/controller"
+
+	"github.com/gin-gonic/gin"
+)
 
 //Refresh is post
 func Refresh(ctx *gin.Context) {
-	ctx.JSON(200, gin.H{"success": "hello"})
+	tokenInfo := ctx.MustGet("tokenInfo").(*controller.RedisTokenDetails)
+
+	deleted, delErr := controller.DeleteAuth(ctx, tokenInfo)
+	if delErr != nil || deleted == 0 { //if anything goes wrong
+		ctx.AbortWithStatusJSON(500, "Internel Server Error")
+		return
+	}
+
+	tokenDetails, err := controller.CreateToken(tokenInfo.UserID)
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	errToken := controller.SetToken(ctx, tokenInfo.UserID, tokenDetails)
+	if errToken != nil {
+		ctx.JSON(500, gin.H{
+			"error": errToken.Error(),
+		})
+		return
+	}
+	ctx.SetCookie("jid", tokenDetails.RefreshToken,
+		604800,
+		"/api/ref",
+		"localhost",
+		false,
+		true,
+	)
+	ctx.JSON(200, gin.H{
+		"access_token": tokenDetails.AccessToken,
+	})
 }
