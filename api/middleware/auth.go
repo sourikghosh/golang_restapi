@@ -4,6 +4,7 @@ import (
 	"restapi/api/controller"
 	"restapi/database"
 	"restapi/models"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -115,6 +116,32 @@ func AccessTokenAuth() gin.HandlerFunc {
 			return
 		}
 		ctx.Set("userid", tokenInfo.UserID)
+		ctx.Next()
+	}
+}
+
+//RefreshTokenAuth checks
+func RefreshTokenAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		refreshToken, errRefresh := controller.VerifyRefreshToken(ctx)
+		if errRefresh != nil {
+			ctx.AbortWithStatusJSON(401, errRefresh.Error())
+			return
+		}
+		refreshtokenInfo, errEx := controller.ExtractRefreshTokenMetadata(refreshToken)
+		if errEx != nil {
+			ctx.AbortWithStatusJSON(500, errEx.Error())
+			return
+		}
+		errFromRedis := controller.FetchRefreshTokens(ctx, refreshtokenInfo)
+		if errFromRedis != nil {
+			ctx.AbortWithStatusJSON(401, errFromRedis.Error())
+			return
+		}
+
+		tokenInfo := refreshtokenInfo
+		tokenInfo.AccessUUID = strings.Split(tokenInfo.RefreshUUID, "++")[0]
+		ctx.Set("tokenInfo", tokenInfo)
 		ctx.Next()
 	}
 }
