@@ -21,9 +21,9 @@ func InitDB(connString string) error {
 }
 
 //GetByEmail sends if Email exits
-func GetByEmail(ctx *gin.Context, email string) (models.Login, bool) {
-	var details models.Login
-	err := conn.QueryRow(ctx, "Select email,password from go_userlist where email = $1", email).Scan(&details.Email, &details.Password)
+func GetByEmail(ctx *gin.Context, email string) (models.Signup, bool) {
+	var details models.Signup
+	err := conn.QueryRow(ctx, "Select * from go_userlist where email = $1", email).Scan(&details.ID, &details.Email, &details.Password)
 
 	if err != nil {
 		return details, false
