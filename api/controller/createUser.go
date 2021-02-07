@@ -13,6 +13,9 @@ func CreateUser(ctx *gin.Context, userInfo models.Signup) error {
 	if errHash != nil {
 		return errHash
 	}
-	database.CreateUser(ctx, userInfo.Email, hpass)
+	err := database.CreateUser(ctx, userInfo.Email, hpass)
+	if err != nil {
+		return err
+	}
 	return nil
 }

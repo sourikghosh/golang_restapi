@@ -33,8 +33,12 @@ func GetByEmail(ctx *gin.Context, email string) (models.Signup, bool) {
 }
 
 //CreateUser will add the user to the database and take the email and password
-func CreateUser(ctx *gin.Context, email string, password string) {
+func CreateUser(ctx *gin.Context, email string, password string) error {
 
-	conn.QueryRow(ctx, "INSERT INTO go_userlist(email, password) VALUES ($1,$2)",
+	_, err := conn.Query(ctx, "INSERT INTO go_userlist(email, password) VALUES ($1,$2)",
 		email, password)
+	if err != nil {
+		return err
+	}
+	return nil
 }
