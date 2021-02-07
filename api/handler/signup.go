@@ -2,7 +2,6 @@ package handler
 
 import (
 	"restapi/api/controller"
-	"restapi/database"
 	"restapi/models"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +10,13 @@ import (
 //Signup routes
 func Signup(ctx *gin.Context) {
 	data := ctx.MustGet("data").(models.Signup)
-	database.CreateUser(ctx, data.Email, data.Password)
+	errSave := controller.CreateUser(ctx, data)
+	if errSave != nil {
+		ctx.JSON(500, gin.H{
+			"error": errSave.Error(),
+		})
+		return
+	}
 
 	tokenDetails, err := controller.CreateToken(data.ID)
 	if err != nil {

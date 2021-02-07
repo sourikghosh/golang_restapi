@@ -19,17 +19,16 @@ func SignupAuthentication() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(401, gin.H{"error": err.Error()})
 			return
 		}
-
 		if signupData.Password != signupData.ConfirmPassword {
 			ctx.AbortWithStatusJSON(402, gin.H{"error": "ConfirmPassword doesnot match the Password"})
 			return
 		}
-		data, exits := database.GetByEmail(ctx, signupData.Email)
+		_, exits := database.GetByEmail(ctx, signupData.Email)
 		if exits {
 			ctx.AbortWithStatusJSON(400, gin.H{"err": "Email already exists"})
 			return
 		}
-		ctx.Set("data", data)
+		ctx.Set("data", signupData)
 		ctx.Next()
 	}
 }
@@ -47,7 +46,8 @@ func LoginAuthentication() gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(400, gin.H{"err": "invalid email/password"})
 			return
 		}
-		if data.Password != loginData.Password {
+		ok := controller.CompareHash(data.Password, loginData.Password)
+		if !ok {
 			ctx.AbortWithStatusJSON(400, gin.H{"err": "invalid email/password"})
 			return
 		}
