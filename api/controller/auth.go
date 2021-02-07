@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
 )
 
 //RedisTokenDetails struct
@@ -38,7 +38,7 @@ func CreateToken(userid string) (*TokenDetails, error) {
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	AccessUUID, errUUID := uuid.NewV4()
 	if errUUID != nil {
-		return nil, errUUID
+		return nil, errors.Wrap(errUUID, "Could not create uuid for accessToken")
 	}
 	td.AccessUUID = AccessUUID.String()
 	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
@@ -54,7 +54,7 @@ func CreateToken(userid string) (*TokenDetails, error) {
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(config.Config["ACCESS_SECRET"]))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "AccessToken signing failed")
 	}
 	//Creating Refresh Token
 	rtClaims := jwt.MapClaims{}
@@ -64,7 +64,7 @@ func CreateToken(userid string) (*TokenDetails, error) {
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
 	td.RefreshToken, err = rt.SignedString([]byte(config.Config["REFRESH_SECRET"]))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "RefreshToken signing failed")
 	}
 	return td, nil
 }
@@ -76,7 +76,7 @@ func SetToken(ctx *gin.Context, userid string, td *TokenDetails) error {
 	now := time.Now()
 	errAccess := database.Set(ctx, td.AccessUUID, userid, at.Sub(now))
 	if errAccess != nil {
-		return errAccess
+		return errors.Wrap(errAccess, "AccessToken signing failed")
 	}
 
 	errRefresh := database.Set(ctx, td.RefreshUUID, userid, rt.Sub(now))
