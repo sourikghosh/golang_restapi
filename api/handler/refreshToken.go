@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"restapi/api/controller"
 	"time"
+
+	"restapi/api/controller"
 
 	"github.com/gin-gonic/gin"
 )
