@@ -1,10 +1,11 @@
 package middleware
 
 import (
+	"strings"
+
 	"restapi/api/controller"
 	"restapi/database"
 	"restapi/models"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
