@@ -3,6 +3,7 @@ package handler
 import (
 	"restapi/api/controller"
 	"restapi/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,8 +33,11 @@ func Signup(ctx *gin.Context) {
 		})
 		return
 	}
+	rtDuration := tokenDetails.RtExpires
+	second := time.Now().Add(time.Second).Unix()
+	cookieDuration := int(rtDuration / second)
 	ctx.SetCookie("jid", tokenDetails.RefreshToken,
-		604800,
+		cookieDuration,
 		"/api/ref",
 		"localhost",
 		false,
